@@ -246,3 +246,27 @@ jobs:
               -H "Content-Type: application/json" \
               --data "$payload"
           fi
+
+      - name: Send Slack failure notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+          RUN_ID: ${{ github.run_id }}
+          SERVER_URL: ${{ github.server_url }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL secret is not configured. Skipping Slack notification."
+            exit 0
+          fi
+
+          pipeline_url="${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+          message="🚨 Solution CI failed for ${REPOSITORY} on branch ${BRANCH}. backend=${BACKEND_RESULT}, frontend=${FRONTEND_RESULT}. Run: ${pipeline_url}"
+
+          slack_payload=$(jq -n --arg text "$message" '{text: $text}')
+
+          curl -sS -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            --data "$slack_payload"

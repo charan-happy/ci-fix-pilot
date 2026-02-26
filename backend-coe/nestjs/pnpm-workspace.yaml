@@ -1,0 +1,15 @@
+# pnpm workspace configuration
+# This file defines the workspace structure for pnpm
+
+packages:
+  # Include the current directory as a workspace package
+  - '.'
+
+  # If you have multiple packages in subdirectories, include them here
+  # - 'packages/*'
+  # - 'apps/*'
+  # - 'libs/*'
+
+# Workspace settings
+prefer-workspace-packages: true
+link-workspace-packages: true

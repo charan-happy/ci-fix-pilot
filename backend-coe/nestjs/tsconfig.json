@@ -1,0 +1,72 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ESNext",
+    "sourceMap": true,
+    "rootDir": ".",
+    "outDir": "./dist",
+    "incremental": true,
+    "skipLibCheck": true,
+    "ignoreDeprecations": "5.0",
+    // Strict type checking for better code quality
+    "strict": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    // Additional strict checks
+    "maxNodeModuleJsDepth": 20,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "importsNotUsedAsValues": "remove",
+    // Path mapping for clean imports
+    "paths": {
+      "@common/*": ["./src/common/*"],
+      "@middlewares/*": ["./src/middlewares/*"],
+      "@interceptors/*": ["./src/interceptors/*"],
+      "@config/*": ["./src/config/*"],
+      "@logger/*": ["./src/logger/*"],
+      "@db/*": ["./src/db/*"],
+      "@redis/*": ["./src/redis/*"],
+      "@otel/*": ["./src/otel/*"],
+      "@bg/*": ["./src/background/*"],
+      "@cron/*": ["./src/background/cron/*"],
+      "@email-queue/*": ["./src/background/queue/email/*"],
+      "@notification-queue/*": ["./src/background/queue/notification/*"],
+      "@dead-letter-queue/*": ["./src/background/queue/dead-letter/*"],
+      "@metrics/*": ["./src/api/metrics/*"],
+      "@health/*": ["./src/api/health/*"],
+      "@auth/*": ["./src/auth/*"],
+      "@users/*": ["./src/users/*"],
+      "@media/*": ["./src/media/*"],
+      "@email/*": ["./src/email/*"],
+      "@sms/*": ["./src/sms/*"],
+      "@notifications/*": ["./src/notifications/*"],
+      "@ai/*": ["./src/ai/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "test/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage"
+  ]
+}

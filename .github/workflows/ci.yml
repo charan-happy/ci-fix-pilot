@@ -26,7 +26,7 @@ jobs:
           --health-timeout=5s
           --health-retries=10
       redis:
-        image: bitnami/redis:7.2
+        image: bitnami/redis:latest
         env:
           REDIS_PASSWORD: redispass
           ALLOW_EMPTY_PASSWORD: no
@@ -46,17 +46,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: backend-coe/nestjs/pnpm-lock.yaml
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8.15.0
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
@@ -140,17 +140,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: frontend-coe/pnpm-lock.yaml
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.17.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

@@ -42,7 +42,7 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_INGEST: z.string().default("/ingest"),
     NEXT_PUBLIC_BACKEND_API_URL: z
       .url("Backend API URL is required")
-      .default("http://localhost:3000/v1"),
+      .default("http://localhost:3002/v1"),
     NEXT_PUBLIC_POSTHOG_ENVIRONMENT: z
       .enum(["development", "staging", "production"])
       .default("development"),

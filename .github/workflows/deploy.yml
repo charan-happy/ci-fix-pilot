@@ -73,6 +73,8 @@ jobs:
 
           echo "Timed out waiting for services"
           tail -n 200 /tmp/dev-up.log || true
+          tail -n 200 .run-logs/backend.log || true
+          tail -n 200 .run-logs/frontend.log || true
           exit 1
 
       - name: Skip smoke checks (manual trigger)

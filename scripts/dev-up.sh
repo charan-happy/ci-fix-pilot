@@ -30,6 +30,17 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
+run_compose_up() {
+  local compose_dir="$1"
+  cd "$compose_dir"
+
+  if command -v docker-compose >/dev/null 2>&1; then
+    docker-compose up -d
+  else
+    docker compose up -d
+  fi
+}
+
 use_project_node() {
   if [[ -n "${NVM_DIR:-}" && -s "$NVM_DIR/nvm.sh" ]]; then
     . "$NVM_DIR/nvm.sh"
@@ -59,7 +70,7 @@ prepare_backend() {
 
   pnpm run generate:prometheus
   pnpm install --no-frozen-lockfile --engine-strict=false
-  pnpm run db:dev:up
+  run_compose_up "$ROOT_DIR/backend-coe/nestjs"
   pnpm run db:migrate
 }
 

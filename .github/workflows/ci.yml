@@ -269,10 +269,58 @@ jobs:
           fi
 
           pipeline_url="${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
-          message="🚨 Solution CI failed for ${REPOSITORY} on branch ${BRANCH}. backend=${BACKEND_RESULT}, frontend=${FRONTEND_RESULT}. Run: ${pipeline_url}"
+          title="🚨 Solution CI failure detected"
+          summary="Repository: ${REPOSITORY} | Branch: ${BRANCH} | Backend: ${BACKEND_RESULT} | Frontend: ${FRONTEND_RESULT}"
 
-          slack_payload=$(jq -n --arg text "$message" '{text: $text}')
+          slack_payload=$(jq -n \
+            --arg text "$title" \
+            --arg summary "$summary" \
+            --arg run_url "$pipeline_url" \
+            --arg backend "$BACKEND_RESULT" \
+            --arg frontend "$FRONTEND_RESULT" \
+            '{
+              text: $text,
+              blocks: [
+                {
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text: "*:rotating_light: Solution CI failure detected*"
+                  }
+                },
+                {
+                  type: "section",
+                  fields: [
+                    { type: "mrkdwn", text: "*Backend*\n" + $backend },
+                    { type: "mrkdwn", text: "*Frontend*\n" + $frontend }
+                  ]
+                },
+                {
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text: "*Details*\n" + $summary
+                  }
+                },
+                {
+                  type: "actions",
+                  elements: [
+                    {
+                      type: "button",
+                      text: { type: "plain_text", text: "Open GitHub Run" },
+                      url: $run_url
+                    }
+                  ]
+                }
+              ]
+            }')
 
-          curl -sS -X POST "$SLACK_WEBHOOK_URL" \
+          slack_http_code=$(curl -sS -o /tmp/slack-webhook-response.txt -w "%{http_code}" -X POST "$SLACK_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
-            --data "$slack_payload"
+            --data "$slack_payload")
+
+          if [ "$slack_http_code" -lt 200 ] || [ "$slack_http_code" -ge 300 ]; then
+            echo "Slack webhook failed with HTTP $slack_http_code"
+            cat /tmp/slack-webhook-response.txt || true
+            exit 1
+          fi

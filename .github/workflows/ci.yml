@@ -144,10 +144,11 @@ jobs:
     name: Notify CI Healing
     runs-on: ubuntu-latest
     needs: [backend, frontend]
-    if: ${{ always() && (contains(fromJson('["failure","cancelled"]'), needs.backend.result) || contains(fromJson('["failure","cancelled"]'), needs.frontend.result)) }}
+    if: ${{ always() }}
 
     steps:
       - name: Send CI failure webhook
+        if: ${{ contains(fromJson('["failure","cancelled"]'), needs.backend.result) || contains(fromJson('["failure","cancelled"]'), needs.frontend.result) }}
         env:
           CI_HEALING_WEBHOOK_URL: ${{ secrets.CI_HEALING_WEBHOOK_URL }}
           CI_HEALING_WEBHOOK_SECRET: ${{ secrets.CI_HEALING_WEBHOOK_SECRET }}
@@ -223,7 +224,14 @@ jobs:
           fi
 
           pipeline_url="${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
-          title="🚨 Solution CI failure detected"
+          if [ "$BACKEND_RESULT" = "success" ] && [ "$FRONTEND_RESULT" = "success" ]; then
+            title="✅ Solution CI passed"
+            status_emoji=":white_check_mark:"
+          else
+            title="🚨 Solution CI failure detected"
+            status_emoji=":rotating_light:"
+          fi
+
           summary="Repository: ${REPOSITORY} | Branch: ${BRANCH} | Backend: ${BACKEND_RESULT} | Frontend: ${FRONTEND_RESULT}"
 
           slack_payload=$(jq -n \
@@ -232,6 +240,7 @@ jobs:
             --arg run_url "$pipeline_url" \
             --arg backend "$BACKEND_RESULT" \
             --arg frontend "$FRONTEND_RESULT" \
+            --arg status_emoji "$status_emoji" \
             '{
               text: $text,
               blocks: [
@@ -239,7 +248,7 @@ jobs:
                   type: "section",
                   text: {
                     type: "mrkdwn",
-                    text: "*:rotating_light: Solution CI failure detected*"
+                    text: "*" + $status_emoji + " " + $text + "*"
                   }
                 },
                 {

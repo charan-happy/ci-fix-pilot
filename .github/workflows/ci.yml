@@ -190,7 +190,7 @@ jobs:
     name: Notify CI Healing
     runs-on: ubuntu-latest
     needs: [backend, frontend]
-    if: ${{ always() && (needs.backend.result == 'failure' || needs.frontend.result == 'failure') }}
+    if: ${{ always() && (contains(fromJson('["failure","cancelled"]'), needs.backend.result) || contains(fromJson('["failure","cancelled"]'), needs.frontend.result)) }}
 
     steps:
       - name: Send CI failure webhook
@@ -237,14 +237,20 @@ jobs:
 
           if [ -n "$CI_HEALING_WEBHOOK_SECRET" ]; then
             signature=$(printf "%s:%s" "$CI_HEALING_WEBHOOK_SECRET" "$error_log" | shasum -a 256 | awk '{print $1}')
-            curl -sS -X POST "$CI_HEALING_WEBHOOK_URL" \
+            http_code=$(curl -sS -o /tmp/ci-healing-webhook-response.txt -w "%{http_code}" -X POST "$CI_HEALING_WEBHOOK_URL" \
               -H "Content-Type: application/json" \
               -H "x-ci-signature: ${signature}" \
-              --data "$payload"
+              --data "$payload")
           else
-            curl -sS -X POST "$CI_HEALING_WEBHOOK_URL" \
+            http_code=$(curl -sS -o /tmp/ci-healing-webhook-response.txt -w "%{http_code}" -X POST "$CI_HEALING_WEBHOOK_URL" \
               -H "Content-Type: application/json" \
-              --data "$payload"
+              --data "$payload")
+          fi
+
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+            echo "CI healing webhook failed with HTTP $http_code"
+            cat /tmp/ci-healing-webhook-response.txt || true
+            exit 1
           fi
 
       - name: Send Slack failure notification

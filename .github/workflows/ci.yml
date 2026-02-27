@@ -248,21 +248,21 @@ jobs:
                   type: "section",
                   text: {
                     type: "mrkdwn",
-                    text: "*" + $status_emoji + " " + $text + "*"
+                    text: "*\($status_emoji) \($text)*"
                   }
                 },
                 {
                   type: "section",
                   fields: [
-                    { type: "mrkdwn", text: "*Backend*\n" + $backend },
-                    { type: "mrkdwn", text: "*Frontend*\n" + $frontend }
+                    { type: "mrkdwn", text: "*Backend*\n\($backend)" },
+                    { type: "mrkdwn", text: "*Frontend*\n\($frontend)" }
                   ]
                 },
                 {
                   type: "section",
                   text: {
                     type: "mrkdwn",
-                    text: "*Details*\n" + $summary
+                    text: "*Details*\n\($summary)"
                   }
                 },
                 {

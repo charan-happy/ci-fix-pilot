@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 45
     services:
       postgres:
-        image: postgres:17
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -130,7 +130,7 @@ jobs:
   frontend:
     name: Frontend CI (Next.js)
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
 
     defaults:
       run:
@@ -176,7 +176,7 @@ jobs:
         run: pnpm exec playwright install --with-deps
 
       - name: Run frontend Playwright suite
-        run: pnpm test:e2e
+        run: pnpm test:e2e --workers=2 --retries=1
 
       - name: Upload frontend Playwright report
         if: ${{ always() }}

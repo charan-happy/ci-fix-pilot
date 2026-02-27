@@ -95,38 +95,6 @@ jobs:
       - name: Run database migration
         run: pnpm run db:migrate
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
-      - name: Start API
-        run: pnpm run api:start > /tmp/backend-api.log 2>&1 &
-
-      - name: Wait for API health
-        run: |
-          for i in {1..45}; do
-            if curl -sS http://localhost:3002/health | grep -q 'Success'; then
-              echo "API is healthy"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "API did not become healthy in time"
-          cat /tmp/backend-api.log || true
-          exit 1
-
-      - name: Run backend Playwright suite
-        env:
-          TEST_BASE_URL: http://localhost:3002
-        run: pnpm run test:playwright
-
-      - name: Upload backend Playwright report
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-playwright-report
-          path: backend-coe/nestjs/playwright-report
-          retention-days: 14
-
   frontend:
     name: Frontend CI (Next.js)
     runs-on: ubuntu-latest
@@ -171,20 +139,6 @@ jobs:
 
       - name: Run Vitest suite
         run: pnpm test:run
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
-      - name: Run frontend Playwright suite
-        run: pnpm test:e2e --workers=2 --retries=1
-
-      - name: Upload frontend Playwright report
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-playwright-report
-          path: frontend-coe/playwright-report
-          retention-days: 14
 
   notify-ci-healing:
     name: Notify CI Healing

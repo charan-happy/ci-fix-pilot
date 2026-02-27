@@ -5,6 +5,15 @@ on:
     workflows: ["Build CI"]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      skipSmoke:
+        description: "Skip dev-up smoke start/health checks"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
   deploy:
@@ -29,15 +38,18 @@ jobs:
           cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Validate dev scripts
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.skipSmoke != 'true' }}
         run: |
           bash -n scripts/dev-up.sh
           bash -n scripts/dev-down.sh
 
       - name: Start services via dev-up
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.skipSmoke != 'true' }}
         run: |
           nohup bash scripts/dev-up.sh >/tmp/dev-up.log 2>&1 &
 
       - name: Wait for backend and frontend health
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.skipSmoke != 'true' }}
         run: |
           backend_ok=0
           frontend_ok=0
@@ -62,6 +74,10 @@ jobs:
           echo "Timed out waiting for services"
           tail -n 200 /tmp/dev-up.log || true
           exit 1
+
+      - name: Skip smoke checks (manual trigger)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skipSmoke == 'true' }}
+        run: echo "Skipping dev-up smoke cycle as requested"
 
       - name: Stop services
         if: ${{ always() }}

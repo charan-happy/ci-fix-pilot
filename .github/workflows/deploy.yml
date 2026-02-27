@@ -1,0 +1,69 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Build CI"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: '**/pnpm-lock.yaml'
+
+      - name: Validate dev scripts
+        run: |
+          bash -n scripts/dev-up.sh
+          bash -n scripts/dev-down.sh
+
+      - name: Start services via dev-up
+        run: |
+          nohup bash scripts/dev-up.sh >/tmp/dev-up.log 2>&1 &
+
+      - name: Wait for backend and frontend health
+        run: |
+          backend_ok=0
+          frontend_ok=0
+
+          for i in {1..90}; do
+            if curl -sS http://127.0.0.1:3002/health | grep -q 'Success'; then
+              backend_ok=1
+            fi
+
+            if curl -sS http://127.0.0.1:3000 >/dev/null 2>&1; then
+              frontend_ok=1
+            fi
+
+            if [ "$backend_ok" -eq 1 ] && [ "$frontend_ok" -eq 1 ]; then
+              echo "Backend and frontend are up"
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "Timed out waiting for services"
+          tail -n 200 /tmp/dev-up.log || true
+          exit 1
+
+      - name: Stop services
+        if: ${{ always() }}
+        run: |
+          bash scripts/dev-down.sh

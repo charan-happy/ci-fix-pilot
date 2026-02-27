@@ -30,16 +30,48 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
+use_project_node() {
+  if [[ -n "${NVM_DIR:-}" && -s "$NVM_DIR/nvm.sh" ]]; then
+    . "$NVM_DIR/nvm.sh"
+    nvm use 22 >/dev/null 2>&1 || true
+    return
+  fi
+
+  if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
+    export NVM_DIR="$HOME/.nvm"
+    . "$NVM_DIR/nvm.sh"
+    nvm use 22 >/dev/null 2>&1 || true
+  fi
+}
+
 prepare_backend() {
   cd "$ROOT_DIR/backend-coe/nestjs"
+  use_project_node
 
   if [[ ! -f .env && -f .env.example ]]; then
     cp .env.example .env
   fi
 
+  if [[ -d apm/prometheus.yml ]]; then
+    echo "Found directory at apm/prometheus.yml; replacing with generated file path"
+    rm -rf apm/prometheus.yml
+  fi
+
+  pnpm run generate:prometheus
   pnpm install --no-frozen-lockfile --engine-strict=false
   pnpm run db:dev:up
   pnpm run db:migrate
+}
+
+prepare_frontend() {
+  cd "$ROOT_DIR/frontend-coe"
+  use_project_node
+
+  if [[ ! -f .env && -f .env.example ]]; then
+    cp .env.example .env
+  fi
+
+  pnpm install --frozen-lockfile
 }
 
 backend_loop() {
@@ -47,6 +79,7 @@ backend_loop() {
     echo "[$(date '+%H:%M:%S')] starting backend (watch mode)" | tee -a "$LOG_DIR/backend.log"
     (
       cd "$ROOT_DIR/backend-coe/nestjs"
+      use_project_node
       pnpm run start:dev
     ) >>"$LOG_DIR/backend.log" 2>&1 || true
 
@@ -60,10 +93,7 @@ frontend_loop() {
     echo "[$(date '+%H:%M:%S')] starting frontend (dev mode)" | tee -a "$LOG_DIR/frontend.log"
     (
       cd "$ROOT_DIR/frontend-coe"
-      if [[ ! -f .env && -f .env.example ]]; then
-        cp .env.example .env
-      fi
-      pnpm install --frozen-lockfile
+      use_project_node
       pnpm run dev
     ) >>"$LOG_DIR/frontend.log" 2>&1 || true
 
@@ -74,6 +104,9 @@ frontend_loop() {
 
 echo "Preparing backend dependencies/services..."
 prepare_backend
+
+echo "Preparing frontend dependencies..."
+prepare_frontend
 
 echo "Starting backend + frontend supervisor..."
 backend_loop &
